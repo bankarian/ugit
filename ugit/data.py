@@ -1,3 +1,6 @@
+'''
+Manage the disk related operation.
+'''
 import os
 import hashlib
 
