@@ -12,7 +12,7 @@ def init():
     os.makedirs(f"{GIT_DIR}/objects")
 
 
-def hash_object(data, type_='blob') -> str:
+def hash_object(data: bytes, type_='blob') -> str:
     '''
     Content-addressable storage, save data to a new file with name of hash(data), return object id.
     '''
@@ -25,7 +25,10 @@ def hash_object(data, type_='blob') -> str:
     return oid
 
 
-def get_object(oid: str, expected='blob'):
+def get_object(oid: str, expected='blob') -> bytes:
+    '''
+    Get the file content by oid.
+    '''
     with open(f"{GIT_DIR}/objects/{oid}", 'rb') as f:
         obj = f.read()
     type_, _, content = obj.partition(b'\x00')
