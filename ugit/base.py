@@ -9,7 +9,7 @@ def write_tree(directory='.'):
     entries = []
     with os.scandir(directory) as it:
         for entry in it:
-            full = f'{directory}/{entry.name}'
+            full = f'{directory}{os.sep}{entry.name}'
             if is_ignored(full):
                 continue
             if entry.is_file(follow_symlinks=False):
@@ -31,12 +31,13 @@ def _empty_current_directory():
     for dirpath, dirnames, filenames in os.walk('.', topdown=False):
         # down to top
         for filename in filenames:
-            path = os.path.relpath(f'{dirpath}/{filename}')
+            path = os.path.relpath(f'{dirpath}{os.sep}{filename}')
+            print(path)
             if is_ignored(path) or not os.path.isfile(path):
                 continue
             os.remove(path)
         for dirname in dirnames:
-            path = os.path.relpath(f'{dirpath}/{dirname}')
+            path = os.path.relpath(f'{dirpath}{os.sep}{dirname}')
             if is_ignored(path):
                 continue
             try:
@@ -56,7 +57,7 @@ def _iter_tree_entries(oid: str):
     tree = data.get_object(oid, 'tree')
     for entry in tree.decode().splitlines():
         type_, oid, name = entry.split(' ', 2)
-        yield type_, oid,
+        yield type_, oid, name
 
 
 def get_tree(oid: str, base_path: str = ''):
@@ -84,11 +85,11 @@ def read_tree(tree_oid: str):
     '''
     _empty_current_directory()
     for path, oid in get_tree(tree_oid, base_path='./').items():
-        os.makedirs(os.pardir.dirname(path), exist_ok=True)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             f.write(data.get_object(oid))
 
 
 def is_ignored(path):
     # TODO use '.ugitignore' file
-    return '.ugit' in path.split('/') or '.git' in path.split('/')
+    return '.ugit' in path.split(os.sep) or '.git' in path.split(os.sep)
