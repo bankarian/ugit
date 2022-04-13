@@ -12,6 +12,16 @@ def init():
     os.makedirs(f"{GIT_DIR}/objects")
 
 
+def set_HEAD(oid: str):
+    with open(f'{GIT_DIR}{os.sep}HEAD', 'w') as f:
+        f.write(oid)
+
+def get_HEAD():
+    if os.path.isfile(f'{GIT_DIR}{os.sep}HEAD'):
+        with open(f'{GIT_DIR}{os.sep}HEAD') as f:
+            return f.read().strip()
+
+
 def hash_object(data: bytes, type_='blob') -> str:
     '''
     Content-addressable storage, save data to a new file with name of hash(data), return object id.

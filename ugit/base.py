@@ -6,6 +6,10 @@ from . import data
 
 
 def write_tree(directory='.'):
+    '''
+    Save a version of the directory in ugit object database, 
+    without addtional context.
+    '''
     entries = []
     with os.scandir(directory) as it:
         for entry in it:
@@ -80,7 +84,7 @@ def get_tree(oid: str, base_path: str = ''):
 
 def read_tree(tree_oid: str):
     '''
-    Empty current workspace, and restore a previous workspace
+    Empty current workspace, and restore a previous workspace 
     from tree object.
     '''
     _empty_current_directory()
@@ -88,6 +92,24 @@ def read_tree(tree_oid: str):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             f.write(data.get_object(oid))
+
+
+def commit(message: str):
+    '''
+    Copy current directory to object database with author and time, 
+    also save message as commit.
+    '''
+    commit = f'tree {write_tree()}\n'
+    HEAD = data.get_HEAD()
+    if HEAD:
+        commit += f'parent {HEAD}\n'
+    commit += '\n'
+    commit += f'{message}\n'
+
+    oid = data.hash_object(commit.encode(), 'commit')
+    data.set_HEAD(oid)
+
+    return oid
 
 
 def is_ignored(path):
