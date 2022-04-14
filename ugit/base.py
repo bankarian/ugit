@@ -149,6 +149,10 @@ def create_tag(name: str, oid: str):
     data.update_ref(f'refs{S}tags{S}{name}', oid)
 
 
+def get_oid(name: str):
+    return data.get_ref(name) or name
+
+
 def is_ignored(path):
     # TODO use '.ugitignore' file
     return '.ugit' in path.split(S) or '.git' in path.split(S)

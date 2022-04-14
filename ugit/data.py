@@ -34,6 +34,9 @@ def update_ref(ref: str, oid: str):
 
 
 def get_ref(ref: str) -> str:
+    """
+    Get oid from reference, which is a tag assigned by the user.
+    """
     ref_path = f'{GIT_DIR}{S}{ref}'
     if os.path.isfile(ref_path):
         with open(ref_path) as f:
