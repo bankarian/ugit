@@ -1,15 +1,19 @@
-'''
-A higher level module on top of data.
-'''
+"""A higher level module on top of data.
+"""
 import os
+import itertools
+import operator
+
+from collections import namedtuple
+
 from . import data
 
 
 def write_tree(directory='.'):
-    '''
+    """
     Save a version of the directory in ugit object database, 
     without addtional context.
-    '''
+    """
     entries = []
     with os.scandir(directory) as it:
         for entry in it:
@@ -53,9 +57,9 @@ def _empty_current_directory():
 
 
 def _iter_tree_entries(oid: str):
-    '''
+    """
     Iterate through a level in tree and yield [type, oid, name] line by line.
-    '''
+    """
     if not oid:
         return
     tree = data.get_object(oid, 'tree')
@@ -65,9 +69,9 @@ def _iter_tree_entries(oid: str):
 
 
 def get_tree(oid: str, base_path: str = ''):
-    '''
+    """
     Extract the whole tree recursively as a map.
-    '''
+    """
     result = {}
     for type_, oid, name in _iter_tree_entries(oid):
         assert '/' not in name
@@ -83,10 +87,10 @@ def get_tree(oid: str, base_path: str = ''):
 
 
 def read_tree(tree_oid: str):
-    '''
+    """
     Empty current workspace, and restore a previous workspace 
     from tree object.
-    '''
+    """
     _empty_current_directory()
     for path, oid in get_tree(tree_oid, base_path='./').items():
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -95,10 +99,10 @@ def read_tree(tree_oid: str):
 
 
 def commit(message: str):
-    '''
+    """
     Copy current directory to object database with author and time, 
     also save message as commit.
-    '''
+    """
     commit = f'tree {write_tree()}\n'
     HEAD = data.get_HEAD()
     if HEAD:
@@ -110,6 +114,28 @@ def commit(message: str):
     data.set_HEAD(oid)
 
     return oid
+
+
+Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
+
+
+def get_commit(oid: str) -> Commit:
+    parent = None
+    commit = data.get_object(oid, 'commit').decode()
+    lines = iter(commit.splitlines())
+    for line in itertools.takewhile(operator.truth, lines):
+        # iteration stops when meets '\n'
+        key, value = line.split(' ', 1)
+        if key == 'tree':
+            tree = value
+        elif key == 'parent':
+            parent = value
+        else:
+            assert False, f'Unknown field {key}'
+    
+    message = '\n'.join(lines)
+    return Commit(tree=tree, parent=parent, message=message)
+
 
 
 def is_ignored(path):
