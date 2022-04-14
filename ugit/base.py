@@ -8,6 +8,8 @@ from collections import namedtuple
 
 from . import data
 
+S = os.sep
+
 
 def write_tree(directory='.'):
     """
@@ -17,7 +19,7 @@ def write_tree(directory='.'):
     entries = []
     with os.scandir(directory) as it:
         for entry in it:
-            full = f'{directory}{os.sep}{entry.name}'
+            full = f'{directory}{S}{entry.name}'
             if is_ignored(full):
                 continue
             if entry.is_file(follow_symlinks=False):
@@ -39,13 +41,13 @@ def _empty_current_directory():
     for dirpath, dirnames, filenames in os.walk('.', topdown=False):
         # down to top
         for filename in filenames:
-            path = os.path.relpath(f'{dirpath}{os.sep}{filename}')
+            path = os.path.relpath(f'{dirpath}{S}{filename}')
             print(path)
             if is_ignored(path) or not os.path.isfile(path):
                 continue
             os.remove(path)
         for dirname in dirnames:
-            path = os.path.relpath(f'{dirpath}{os.sep}{dirname}')
+            path = os.path.relpath(f'{dirpath}{S}{dirname}')
             if is_ignored(path):
                 continue
             try:
@@ -144,9 +146,9 @@ def checkout(oid: str):
 
 
 def create_tag(name: str, oid: str):
-    pass
+    data.update_ref(f'refs{S}tags{S}{name}', oid)
 
 
 def is_ignored(path):
     # TODO use '.ugitignore' file
-    return '.ugit' in path.split(os.sep) or '.git' in path.split(os.sep)
+    return '.ugit' in path.split(S) or '.git' in path.split(S)

@@ -6,21 +6,37 @@ import hashlib
 GIT_DIR = '.ugit'
 
 
+S = os.sep
+
+
 def init():
     os.makedirs(GIT_DIR)
-    os.makedirs(f"{GIT_DIR}/objects")
+    os.makedirs(f"{GIT_DIR}{S}objects")
 
 
 def set_HEAD(oid: str):
     """
     Set the latest commit oid in HEAD
     """
-    with open(f'{GIT_DIR}{os.sep}HEAD', 'w') as f:
-        f.write(oid)
+    update_ref('HEAD', oid)
+
 
 def get_HEAD():
-    if os.path.isfile(f'{GIT_DIR}{os.sep}HEAD'):
-        with open(f'{GIT_DIR}{os.sep}HEAD') as f:
+    return get_ref('HEAD')
+
+
+
+def update_ref(ref: str, oid: str):
+    ref_path = f'{GIT_DIR}{S}{ref}'
+    os.makedirs(os.path.dirname(ref_path), exist_ok=True)
+    with open(ref_path, 'w') as f:
+        f.write(oid)
+
+
+def get_ref(ref: str) -> str:
+    ref_path = f'{GIT_DIR}{S}{ref}'
+    if os.path.isfile(ref_path):
+        with open(ref_path) as f:
             return f.read().strip()
 
 
