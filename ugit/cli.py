@@ -53,6 +53,9 @@ def parse_args():
     tag_parser.add_argument('name')
     tag_parser.add_argument('oid', nargs='?', type=oid, default='@')
 
+    k_parser = commands.add_parser('k')
+    k_parser.set_defaults(func=k)
+
     return parser.parse_args()
 
 
@@ -101,3 +104,20 @@ def checkout(args):
 
 def tag(args):
     base.create_tag(args.name, args.oid)
+
+
+def k(args):
+    oids = set()
+    for refname, ref in data.iter_refs():
+        print(refname, ref)
+        oids.add(ref)
+    print('')
+
+    for oid in base.iter_commits_and_parents(oids):
+        commit = base.get_commit(oid)
+        print(oid)
+        if commit.parent:
+            print('Parent', commit.parent)
+        print('')
+            
+    # TODO visualize refs

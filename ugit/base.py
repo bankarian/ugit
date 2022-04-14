@@ -123,6 +123,9 @@ Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
 
 
 def get_commit(oid: str) -> Commit:
+    """
+    Get commit(tree, parent, message) from object database.
+    """
     parent = None
     commit = data.get_object(oid, 'commit').decode()
     lines = iter(commit.splitlines())
@@ -172,6 +175,21 @@ def get_oid(name: str):
         return name
     
     assert False, f'Unknown name {name}'
+
+
+def iter_commits_and_parents(oids):
+    oids = set(oids)
+    visited = set()
+
+    while oids:
+        oid = oids.pop()
+        if not oid or oid in visited:
+            continue
+        visited.add(oid)
+        yield oid
+
+        commit = get_commit(oid)
+        oids.add(commit.parent)
 
 
 def is_ignored(path):

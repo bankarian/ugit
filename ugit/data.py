@@ -41,6 +41,7 @@ def get_ref(ref: str) -> str:
     if os.path.isfile(ref_path):
         with open(ref_path) as f:
             return f.read().strip()
+    assert False, f'Unknown ref: {ref}'
 
 
 def hash_object(data: bytes, type_='blob') -> str:
@@ -69,3 +70,16 @@ def get_object(oid: str, expected='blob') -> bytes:
     if expected is not None:
         assert type_ == expected, f'Expected {expected}, got {type_}'
     return content
+
+
+def iter_refs():
+    """
+    A generator that iterates all refs and yields (refname, refcontent)
+    """
+    refs = ['HEAD']
+    for root, _, filenames in os.walk(f'{GIT_DIR}{S}refs{S}'):
+        root = os.path.relpath(root, GIT_DIR)
+        refs.extend(f'{root}{S}{name}' for name in filenames)
+
+    for refname in refs:
+        yield refname, get_ref(refname)
