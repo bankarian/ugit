@@ -3,6 +3,7 @@
 import os
 import itertools
 import operator
+import string
 
 from collections import namedtuple
 
@@ -134,7 +135,7 @@ def get_commit(oid: str) -> Commit:
             parent = value
         else:
             assert False, f'Unknown field {key}'
-    
+
     message = '\n'.join(lines)
     return Commit(tree=tree, parent=parent, message=message)
 
@@ -150,7 +151,27 @@ def create_tag(name: str, oid: str):
 
 
 def get_oid(name: str):
-    return data.get_ref(name) or name
+    if name == '@': 
+        name = 'HEAD'
+
+    # Name is ref
+    refs_to_try = [
+        f'{name}',
+        f'refs{S}{name}',
+        f'refs{S}tags{S}{name}',
+        f'refs{S}heads{S}{name}',
+    ]
+    for ref in refs_to_try:
+        r = data.get_ref(ref)
+        if r:
+            return r
+    
+    # Name is SHA1
+    is_hex = all(c in string.hexdigits for c in name)
+    if len(name) == 40 and is_hex:
+        return name
+    
+    assert False, f'Unknown name {name}'
 
 
 def is_ignored(path):
