@@ -137,6 +137,15 @@ def get_commit(oid: str) -> Commit:
     return Commit(tree=tree, parent=parent, message=message)
 
 
+def checkout(oid: str):
+    commit = get_commit(oid)
+    read_tree(commit.tree)
+    data.set_HEAD(oid)
+
+
+def create_tag(name: str, oid: str):
+    pass
+
 
 def is_ignored(path):
     # TODO use '.ugitignore' file
