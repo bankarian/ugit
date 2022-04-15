@@ -4,6 +4,7 @@ import os
 import hashlib
 
 from collections import namedtuple
+from typing import Iterable
 
 GIT_DIR = '.ugit'
 S = os.sep
@@ -70,7 +71,7 @@ def get_object(oid: str, expected='blob') -> bytes:
     return content
 
 
-def iter_refs():
+def iter_refs() -> Iterable[tuple[str, RefValue]]:
     """
     A generator that iterates all refs and yields (refname, refcontent)
     """
