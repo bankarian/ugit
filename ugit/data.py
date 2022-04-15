@@ -41,7 +41,6 @@ def get_ref(ref: str) -> str:
     if os.path.isfile(ref_path):
         with open(ref_path) as f:
             return f.read().strip()
-    assert False, f'Unknown ref: {ref}'
 
 
 def hash_object(data: bytes, type_='blob') -> str:

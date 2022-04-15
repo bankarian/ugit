@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import textwrap
+import subprocess
 
 from . import data, base
 
@@ -107,17 +108,23 @@ def tag(args):
 
 
 def k(args):
+    dot = 'digraph commits {\n'
+
     oids = set()
     for refname, ref in data.iter_refs():
-        print(refname, ref)
+        dot += f'"{refname}" [shape=note]\n'
+        dot += f'"{refname}" -> "{ref}"\n'
         oids.add(ref)
-    print('')
 
     for oid in base.iter_commits_and_parents(oids):
         commit = base.get_commit(oid)
-        print(oid)
+        dot += f'"{oid}" [shape=box style=filled label="{oid[:10]}"]\n'
         if commit.parent:
-            print('Parent', commit.parent)
-        print('')
-            
-    # TODO visualize refs
+            dot += f'"{oid}" -> "{commit.parent}"\n'
+
+    dot += '}'
+    print(dot)
+    # TODO incompatible on Windows
+    with subprocess.Popen(['dot', '-Ttk', '/dev/stdin'],
+                          stdin=subprocess.PIPE) as proc:
+        proc.communicate(dot.encode())
