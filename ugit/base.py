@@ -21,7 +21,7 @@ def write_tree(directory='.'):
     entries = []
     with os.scandir(directory) as it:
         for entry in it:
-            full = f'{directory}{S}{entry.name}'
+            full = f'{directory}/{entry.name}'
             if is_ignored(full):
                 continue
             if entry.is_file(follow_symlinks=False):
@@ -43,13 +43,12 @@ def _empty_current_directory():
     for dirpath, dirnames, filenames in os.walk('.', topdown=False):
         # down to top
         for filename in filenames:
-            path = os.path.relpath(f'{dirpath}{S}{filename}')
-            print(path)
+            path = os.path.relpath(f'{dirpath}/{filename}')
             if is_ignored(path) or not os.path.isfile(path):
                 continue
             os.remove(path)
         for dirname in dirnames:
-            path = os.path.relpath(f'{dirpath}{S}{dirname}')
+            path = os.path.relpath(f'{dirpath}/{dirname}')
             if is_ignored(path):
                 continue
             try:
@@ -148,7 +147,7 @@ def checkout(oid: str):
 
 
 def create_tag(name: str, oid: str):
-    data.update_ref(f'refs{S}tags{S}{name}',
+    data.update_ref(f'refs/tags/{name}',
                     data.RefValue(symbolic=False, value=oid))
 
 
@@ -159,9 +158,9 @@ def get_oid(name: str) -> str:
     # Name is ref
     refs_to_try = [
         f'{name}',
-        f'refs{S}{name}',
-        f'refs{S}tags{S}{name}',
-        f'refs{S}heads{S}{name}',
+        f'refs/{name}',
+        f'refs/tags/{name}',
+        f'refs/heads/{name}',
     ]
     for ref in refs_to_try:
         r = data.get_ref(ref).value
@@ -192,7 +191,7 @@ def iter_commits_and_parents(oids):
 
 
 def create_branch(name: str, oid: str):
-    data.update_ref(f'refs{S}heads{S}{name}', data.RefValue(symbolic=False, value=oid))
+    data.update_ref(f'refs/heads/{name}', data.RefValue(symbolic=False, value=oid))
 
 
 def is_ignored(path):

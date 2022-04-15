@@ -7,12 +7,11 @@ from collections import namedtuple
 from typing import Iterable
 
 GIT_DIR = '.ugit'
-S = os.sep
 
 
 def init():
     os.makedirs(GIT_DIR)
-    os.makedirs(f"{GIT_DIR}{S}objects")
+    os.makedirs(f"{GIT_DIR}/objects")
 
 
 RefValue = namedtuple('RefValue', ['symbolic', 'value'])
@@ -20,7 +19,7 @@ RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
 def update_ref(ref: str, value: RefValue):
     assert not value.symbolic
-    ref_path = f'{GIT_DIR}{S}{ref}'
+    ref_path = f'{GIT_DIR}/{ref}'
     os.makedirs(os.path.dirname(ref_path), exist_ok=True)
     with open(ref_path, 'w') as f:
         f.write(value.value)
@@ -30,7 +29,7 @@ def get_ref(ref: str) -> RefValue:
     """
     Get oid from reference, which is a tag assigned by the user.
     """
-    ref_path = f'{GIT_DIR}{S}{ref}'
+    ref_path = f'{GIT_DIR}/{ref}'
     value = None
     if os.path.isfile(ref_path):
         with open(ref_path) as f:
@@ -76,9 +75,9 @@ def iter_refs() -> Iterable[tuple[str, RefValue]]:
     A generator that iterates all refs and yields (refname, refcontent)
     """
     refs = ['HEAD']
-    for root, _, filenames in os.walk(f'{GIT_DIR}{S}refs{S}'):
+    for root, _, filenames in os.walk(f'{GIT_DIR}/refs/'):
         root = os.path.relpath(root, GIT_DIR)
-        refs.extend(f'{root}{S}{name}' for name in filenames)
+        refs.extend(f'{root}/{name}' for name in filenames)
 
     for refname in refs:
         yield refname, get_ref(refname)
