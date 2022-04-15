@@ -10,6 +10,7 @@ from collections import namedtuple, deque
 from . import data
 
 S = os.sep
+Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
 
 
 def write_tree(directory='.'):
@@ -107,19 +108,16 @@ def commit(message: str):
     also save message as commit.
     """
     commit = f'tree {write_tree()}\n'
-    HEAD = data.get_HEAD()
+    HEAD = data.get_ref('HEAD').value
     if HEAD:
         commit += f'parent {HEAD}\n'
     commit += '\n'
     commit += f'{message}\n'
 
     oid = data.hash_object(commit.encode(), 'commit')
-    data.set_HEAD(oid)
+    data.update_ref('HEAD', data.RefValue(symbolic=False, value=oid))
 
     return oid
-
-
-Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
 
 
 def get_commit(oid: str) -> Commit:
@@ -146,15 +144,16 @@ def get_commit(oid: str) -> Commit:
 def checkout(oid: str):
     commit = get_commit(oid)
     read_tree(commit.tree)
-    data.set_HEAD(oid)
+    data.update_ref('HEAD', data.RefValue(symbolic=False, value=oid))
 
 
 def create_tag(name: str, oid: str):
-    data.update_ref(f'refs{S}tags{S}{name}', oid)
+    data.update_ref(f'refs{S}tags{S}{name}',
+                    data.RefValue(symbolic=False, value=oid))
 
 
-def get_oid(name: str):
-    if name == '@': 
+def get_oid(name: str) -> str:
+    if name == '@':
         name = 'HEAD'
 
     # Name is ref
@@ -165,15 +164,15 @@ def get_oid(name: str):
         f'refs{S}heads{S}{name}',
     ]
     for ref in refs_to_try:
-        r = data.get_ref(ref)
+        r = data.get_ref(ref).value
         if r:
             return r
-    
+
     # Name is SHA1
     is_hex = all(c in string.hexdigits for c in name)
     if len(name) == 40 and is_hex:
         return name
-    
+
     assert False, f'Unknown name {name}'
 
 
@@ -190,6 +189,10 @@ def iter_commits_and_parents(oids):
 
         commit = get_commit(oid)
         oids.appendleft(commit.parent)
+
+
+def create_branch(name: str, oid: str):
+    data.update_ref(f'refs{S}heads{S}{name}', data.RefValue(symbolic=False, value=oid))
 
 
 def is_ignored(path):

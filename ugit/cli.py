@@ -57,6 +57,11 @@ def parse_args():
     k_parser = commands.add_parser('k')
     k_parser.set_defaults(func=k)
 
+    branch_parser = commands.add_parser('branch')
+    branch_parser.set_defaults(func=branch)
+    branch_parser.add_argument('name')
+    branch_parser.add_argument('start_point', default='@', type=oid, nargs='?')
+
     return parser.parse_args()
 
 
@@ -91,7 +96,7 @@ def commit(args):
 def log(args):
     for oid in base.iter_commits_and_parents({args.oid}):
         commit = base.get_commit(oid)
-        
+
         print(f'commit {oid}\n')
         print(textwrap.indent(commit.message, '     '))
         print('')
@@ -126,3 +131,8 @@ def k(args):
     with subprocess.Popen(['dot', '-Ttk', '/dev/stdin'],
                           stdin=subprocess.PIPE) as proc:
         proc.communicate(dot.encode())
+
+
+def branch(args):
+    base.create_branch(args.name, args.start_point)
+    print(f'Branch {args.name} created at {args.start_point[:10]}')

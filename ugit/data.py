@@ -3,9 +3,9 @@
 import os
 import hashlib
 
+from collections import namedtuple
+
 GIT_DIR = '.ugit'
-
-
 S = os.sep
 
 
@@ -14,33 +14,32 @@ def init():
     os.makedirs(f"{GIT_DIR}{S}objects")
 
 
-def set_HEAD(oid: str):
-    """
-    Set the latest commit oid in HEAD
-    """
-    update_ref('HEAD', oid)
+RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
 
-def get_HEAD():
-    return get_ref('HEAD')
-
-
-
-def update_ref(ref: str, oid: str):
+def update_ref(ref: str, value: RefValue):
+    assert not value.symbolic
     ref_path = f'{GIT_DIR}{S}{ref}'
     os.makedirs(os.path.dirname(ref_path), exist_ok=True)
     with open(ref_path, 'w') as f:
-        f.write(oid)
+        f.write(value.value)
 
 
-def get_ref(ref: str) -> str:
+def get_ref(ref: str) -> RefValue:
     """
     Get oid from reference, which is a tag assigned by the user.
     """
     ref_path = f'{GIT_DIR}{S}{ref}'
+    value = None
     if os.path.isfile(ref_path):
         with open(ref_path) as f:
-            return f.read().strip()
+            value = f.read().strip()
+    
+    if value and value.startswith('ref:'):
+        # dereference symbolic ref
+        return get_ref(value.split(':', 1)[1].strip())
+    
+    return RefValue(symbolic=False, value=value)
 
 
 def hash_object(data: bytes, type_='blob') -> str:
