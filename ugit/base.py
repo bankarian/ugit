@@ -6,7 +6,7 @@ import operator
 import string
 
 from collections import namedtuple, deque
-
+from typing import Iterable
 from . import data
 
 S = os.sep
@@ -175,7 +175,7 @@ def get_oid(name: str) -> str:
     assert False, f'Unknown name {name}'
 
 
-def iter_commits_and_parents(oids):
+def iter_commits_and_parents(oids) -> Iterable[str]:
     oids = deque(oids)
     visited = set()
 

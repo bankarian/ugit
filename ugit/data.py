@@ -19,6 +19,7 @@ RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
 def update_ref(ref: str, value: RefValue):
     assert not value.symbolic
+    ref = _get_ref_internal(ref)[0]
     ref_path = f'{GIT_DIR}/{ref}'
     os.makedirs(os.path.dirname(ref_path), exist_ok=True)
     with open(ref_path, 'w') as f:
@@ -29,17 +30,25 @@ def get_ref(ref: str) -> RefValue:
     """
     Get oid from reference, which is a tag assigned by the user.
     """
+    return _get_ref_internal(ref)[1]
+
+
+def _get_ref_internal(ref: str) -> tuple[str, RefValue]:
+    """
+    Dereference and get the last non-symbolic ref, which points directly to a commit
+    """
     ref_path = f'{GIT_DIR}/{ref}'
     value = None
     if os.path.isfile(ref_path):
         with open(ref_path) as f:
             value = f.read().strip()
-    
-    if value and value.startswith('ref:'):
-        # dereference symbolic ref
-        return get_ref(value.split(':', 1)[1].strip())
-    
-    return RefValue(symbolic=False, value=value)
+
+    is_symbolic = bool(value) and value.startswith('ref:')
+    if is_symbolic:
+        value = value.split(':', 1)[1].strip()
+        return _get_ref_internal(value)
+
+    return ref, RefValue(symbolic=False, value=value)
 
 
 def hash_object(data: bytes, type_='blob') -> str:
