@@ -163,9 +163,8 @@ def get_oid(name: str) -> str:
         f'refs/heads/{name}',
     ]
     for ref in refs_to_try:
-        r = data.get_ref(ref, deref=False).value
-        if r:
-            return r
+        if data.get_ref(ref, deref=False).value:
+            return data.get_ref(ref).value
 
     # Name is SHA1
     is_hex = all(c in string.hexdigits for c in name)
