@@ -17,23 +17,23 @@ def init():
 RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
 
-def update_ref(ref: str, value: RefValue):
+def update_ref(ref: str, value: RefValue, deref: bool = True):
     assert not value.symbolic
-    ref = _get_ref_internal(ref)[0]
+    ref = _get_ref_internal(ref, deref)[0]
     ref_path = f'{GIT_DIR}/{ref}'
     os.makedirs(os.path.dirname(ref_path), exist_ok=True)
     with open(ref_path, 'w') as f:
         f.write(value.value)
 
 
-def get_ref(ref: str) -> RefValue:
+def get_ref(ref: str, deref: bool = True) -> RefValue:
     """
     Get oid from reference, which is a tag assigned by the user.
     """
-    return _get_ref_internal(ref)[1]
+    return _get_ref_internal(ref, deref)[1]
 
 
-def _get_ref_internal(ref: str) -> tuple[str, RefValue]:
+def _get_ref_internal(ref: str, deref: bool) -> tuple[str, RefValue]:
     """
     Dereference and get the last non-symbolic ref, which points directly to a commit
     """
@@ -46,7 +46,9 @@ def _get_ref_internal(ref: str) -> tuple[str, RefValue]:
     is_symbolic = bool(value) and value.startswith('ref:')
     if is_symbolic:
         value = value.split(':', 1)[1].strip()
-        return _get_ref_internal(value)
+        if deref:
+            # dereference recursively
+            return _get_ref_internal(value, deref=True)
 
     return ref, RefValue(symbolic=False, value=value)
 
@@ -79,7 +81,7 @@ def get_object(oid: str, expected='blob') -> bytes:
     return content
 
 
-def iter_refs() -> Iterable[tuple[str, RefValue]]:
+def iter_refs(deref: bool = True) -> Iterable[tuple[str, RefValue]]:
     """
     A generator that iterates all refs and yields (refname, refcontent)
     """
@@ -89,4 +91,4 @@ def iter_refs() -> Iterable[tuple[str, RefValue]]:
         refs.extend(f'{root}/{name}' for name in filenames)
 
     for refname in refs:
-        yield refname, get_ref(refname)
+        yield refname, get_ref(refname, deref)
