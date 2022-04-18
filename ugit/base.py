@@ -121,7 +121,9 @@ def commit(message: str):
     commit += f'{message}\n'
 
     oid = data.hash_object(commit.encode(), 'commit')
-    data.update_ref('HEAD', data.RefValue(symbolic=False, value=oid))
+    data.update_ref('HEAD',
+                    value=data.RefValue(symbolic=False, value=oid),
+                    deref=True)
 
     return oid
 

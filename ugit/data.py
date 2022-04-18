@@ -21,6 +21,9 @@ RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
 
 def update_ref(ref: str, value: RefValue, deref: bool = True):
+    """
+    Update reference, dereference by default.
+    """
     ref = _get_ref_internal(ref, deref)[0]
 
     assert value.value
