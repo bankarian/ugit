@@ -13,6 +13,13 @@ S = os.sep
 Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
 
 
+def init():
+    data.init()
+    # Note that 'main' branch physically exists at the first commit
+    data.update_ref('HEAD',
+                    data.RefValue(symbolic=True, value='refs/heads/main'))
+
+
 def write_tree(directory='.'):
     """
     Save a version of the directory in ugit object database, 
@@ -201,7 +208,22 @@ def iter_commits_and_parents(oids) -> Iterable[str]:
 
 
 def create_branch(name: str, oid: str):
-    data.update_ref(f'refs/heads/{name}', data.RefValue(symbolic=False, value=oid))
+    data.update_ref(f'refs/heads/{name}',
+                    data.RefValue(symbolic=False, value=oid))
+
+
+def get_branch_name():
+    """
+    Return the branch name that HEAD points to by default. 
+    Return None if HEAD is not symbolic.
+    """
+    HEAD = data.get_ref('HEAD', deref=False)
+    if not HEAD.symbolic:
+        # detached HEAD, dangerous!
+        return None
+    value = HEAD.value
+    assert value.startswith('refs/heads/')
+    return os.path.relpath(value, 'refs/heads')
 
 
 def is_ignored(path):

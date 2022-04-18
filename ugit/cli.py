@@ -62,11 +62,14 @@ def parse_args():
     branch_parser.add_argument('name')
     branch_parser.add_argument('start_point', default='@', type=oid, nargs='?')
 
+    status_parser = commands.add_parser('status')
+    status_parser.set_defaults(func=status)
+
     return parser.parse_args()
 
 
 def init(args):
-    data.init()
+    base.init()
     print(
         f"Initialized ugit repository in {os.getcwd()}{os.sep}{data.GIT_DIR}")
 
@@ -139,3 +142,13 @@ def k(args):
 def branch(args):
     base.create_branch(args.name, args.start_point)
     print(f'Branch {args.name} created at {args.start_point[:10]}')
+
+
+def status(args):
+    HEAD = base.get_oid('@')
+    branch = base.get_branch_name()
+    if branch:
+        print(f'On branch {branch}')
+    else:
+        print(f'HEAD detached at {HEAD[:10]}')
+

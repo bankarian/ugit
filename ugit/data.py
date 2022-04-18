@@ -10,6 +10,9 @@ GIT_DIR = '.ugit'
 
 
 def init():
+    """
+    Initialize '.ugit' directory
+    """
     os.makedirs(GIT_DIR)
     os.makedirs(f"{GIT_DIR}/objects")
 
