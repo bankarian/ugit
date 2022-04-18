@@ -18,17 +18,23 @@ RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
 
 def update_ref(ref: str, value: RefValue, deref: bool = True):
-    assert not value.symbolic
     ref = _get_ref_internal(ref, deref)[0]
+
+    assert value.value
+    if value.symbolic:
+        val = f'ref: {value.value}'
+    else:
+        val = value.value
+
     ref_path = f'{GIT_DIR}/{ref}'
     os.makedirs(os.path.dirname(ref_path), exist_ok=True)
     with open(ref_path, 'w') as f:
-        f.write(value.value)
+        f.write(val)
 
 
 def get_ref(ref: str, deref: bool = True) -> RefValue:
     """
-    Get oid from reference, which is a tag assigned by the user.
+    Get reference value, which is oid. Return None if no such reference.
     """
     return _get_ref_internal(ref, deref)[1]
 
