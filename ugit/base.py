@@ -212,9 +212,9 @@ def create_branch(name: str, oid: str):
                     data.RefValue(symbolic=False, value=oid))
 
 
-def get_branch_name():
+def get_branch_name() -> str:
     """
-    Return the branch name that HEAD points to by default. 
+    Return the branch name that HEAD points. 
     Return None if HEAD is not symbolic.
     """
     HEAD = data.get_ref('HEAD', deref=False)
@@ -226,6 +226,11 @@ def get_branch_name():
     return os.path.relpath(value, 'refs/heads')
 
 
-def is_ignored(path):
+def iter_branch_names() -> Iterable[str]:
+    for refname, _ in data.iter_refs(prefix=f'refs{S}heads/'):
+        yield os.path.relpath(refname, f'refs{S}heads/')
+
+
+def is_ignored(path) -> bool:
     # TODO use '.ugitignore' file
     return '.ugit' in path.split(S) or '.git' in path.split(S)

@@ -90,7 +90,7 @@ def get_object(oid: str, expected='blob') -> bytes:
     return content
 
 
-def iter_refs(deref: bool = True) -> Iterable[tuple[str, RefValue]]:
+def iter_refs(prefix: str ='', deref: bool = True) -> Iterable[tuple[str, RefValue]]:
     """
     A generator that iterates all refs and yields (refname, refcontent)
     """
@@ -100,4 +100,6 @@ def iter_refs(deref: bool = True) -> Iterable[tuple[str, RefValue]]:
         refs.extend(f'{root}/{name}' for name in filenames)
 
     for refname in refs:
+        if not refname.startswith(prefix):
+            continue
         yield refname, get_ref(refname, deref)
