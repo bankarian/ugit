@@ -56,7 +56,7 @@ def _get_ref_internal(ref: str, deref: bool) -> tuple[str, RefValue]:
             # dereference recursively
             return _get_ref_internal(value, deref=True)
 
-    return ref, RefValue(symbolic=False, value=value)
+    return ref, RefValue(symbolic=is_symbolic, value=value)
 
 
 def hash_object(data: bytes, type_='blob') -> str:
