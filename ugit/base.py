@@ -233,6 +233,10 @@ def iter_branch_names() -> Iterable[str]:
         yield os.path.relpath(refname, f'refs{S}heads/')
 
 
+def reset(oid: str):
+    data.update_ref('HEAD', data.RefValue(symbolic=False, value=oid))
+
+
 def is_ignored(path) -> bool:
     # TODO use '.ugitignore' file
     return '.ugit' in path.split(S) or '.git' in path.split(S)
