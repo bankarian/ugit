@@ -70,6 +70,10 @@ def parse_args():
     reset_parser.set_defaults(func=reset)
     reset_parser.add_argument('commit', type=oid)
 
+    show_parser = commands.add_parser('show')
+    show_parser.set_defaults(func=show)
+    show_parser.add_argument('oid', default='@', type=oid, nargs='?')
+
     return parser.parse_args()
 
 
@@ -101,6 +105,13 @@ def commit(args):
     print(base.commit(args.message))
 
 
+def _print_commit(oid: str, commit: base.Commit, refs: Iterable[str] = None):
+    refs_str = f'({", ".join(refs)})' if refs else ''
+    print(f'commit {oid}{refs_str}\n')
+    print(textwrap.indent(commit.message, '     '))
+    print('')
+
+
 def log(args):
     # oid -> [refs]
     refs: Dict[str, Iterable[str]] = {}
@@ -109,11 +120,14 @@ def log(args):
 
     for oid in base.iter_commits_and_parents({args.oid}):
         commit = base.get_commit(oid)
+        _print_commit(oid, commit, refs.get(oid))
 
-        refs_str = f'({", ".join(refs[oid])})' if oid in refs else ''
-        print(f'commit {oid}{refs_str}\n')
-        print(textwrap.indent(commit.message, '     '))
-        print('')
+
+def show(args):
+    if not args.oid:
+        return
+    commit = base.get_commit(args.oid)
+    _print_commit(args.oid, commit)
 
 
 def checkout(args):
