@@ -4,7 +4,7 @@ import os
 import hashlib
 
 from collections import namedtuple
-from typing import Iterable
+from typing import Iterable, Tuple
 
 GIT_DIR = '.ugit'
 
@@ -45,7 +45,7 @@ def get_ref(ref: str, deref: bool = True) -> RefValue:
     return _get_ref_internal(ref, deref)[1]
 
 
-def _get_ref_internal(ref: str, deref: bool) -> tuple[str, RefValue]:
+def _get_ref_internal(ref: str, deref: bool) -> Tuple[str, RefValue]:
     """
     Dereference and get the last non-symbolic ref, which points directly to a commit
     """
@@ -93,7 +93,7 @@ def get_object(oid: str, expected='blob') -> bytes:
     return content
 
 
-def iter_refs(prefix: str ='', deref: bool = True) -> Iterable[tuple[str, RefValue]]:
+def iter_refs(prefix: str ='', deref: bool = True) -> Iterable[Tuple[str, RefValue]]:
     """
     A generator that iterates all refs and yields (refname, refcontent)
     """

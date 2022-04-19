@@ -80,7 +80,7 @@ def _iter_tree_entries(oid: str):
 
 def get_tree(oid: str, base_path: str = ''):
     """
-    Extract the whole tree recursively as a map.
+    Extract the whole tree recursively as a Dict.
     """
     result = {}
     for type_, oid, name in _iter_tree_entries(oid):
@@ -239,4 +239,5 @@ def reset(oid: str):
 
 def is_ignored(path) -> bool:
     # TODO use '.ugitignore' file
-    return '.ugit' in path.split(S) or '.git' in path.split(S)
+    return '.ugit' in path.split(S) or '.git' in path.split(
+        S) or '.ugit' in path.split('/') or '.git' in path.split('/')
