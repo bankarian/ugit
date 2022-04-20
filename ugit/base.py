@@ -10,7 +10,7 @@ from typing import Iterable, Dict, AnyStr
 from . import data, diff
 
 S = os.sep
-Commit = namedtuple("Commit", ["tree", "parent", "message"])
+Commit = namedtuple("Commit", ["tree", "parents", "message"])
 
 
 def init():
@@ -126,9 +126,9 @@ def commit(message: str):
 
 def get_commit(oid: str) -> Commit:
     """
-    Get commit(tree, parent, message) from object database.
+    Get commit(tree, parents, message) from object database.
     """
-    parent = None
+    parents = []
     commit = data.get_object(oid, "commit").decode()
     lines = iter(commit.splitlines())
     for line in itertools.takewhile(operator.truth, lines):
@@ -137,12 +137,12 @@ def get_commit(oid: str) -> Commit:
         if key == "tree":
             tree = value
         elif key == "parent":
-            parent = value
+            parents.append(value)
         else:
             assert False, f"Unknown field {key}"
 
     message = "\n".join(lines)
-    return Commit(tree=tree, parent=parent, message=message)
+    return Commit(tree=tree, parents=parents, message=message)
 
 
 def checkout(name: str):
@@ -201,7 +201,9 @@ def iter_commits_and_parents(oids) -> Iterable[str]:
         yield oid
 
         commit = get_commit(oid)
-        oids.appendleft(commit.parent)
+        oids.extendleft(commit.parents[:1])
+        oids.extend(commit.parents[1:])
+
 
 
 def create_branch(name: str, oid: str):
