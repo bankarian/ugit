@@ -6,7 +6,7 @@ import os
 
 from collections import defaultdict
 from tempfile import NamedTemporaryFile as Temp
-from typing import Iterable, Dict, Tuple
+from typing import Iterable, Dict, Tuple, AnyStr
 
 from . import data
 
@@ -73,4 +73,28 @@ def diff_blobs(o_from, o_to, path="blob"):
     # Mannually remove the tempfiles due to Windows file permission issues
     os.remove(f_from.name)
     os.remove(f_to.name)
+    return output
+
+
+def merge_trees(t_HEAD, t_other) -> Dict[str, AnyStr]:
+    tree = {}
+    for path, o_HEAD, o_other in compare_trees(t_HEAD, t_other):
+        tree[path] = merge_blobs(o_HEAD, o_other)
+    return tree
+
+
+def merge_blobs(o_HEAD: str, o_other: str) -> AnyStr:
+    with Temp(delete=False) as f_HEAD, Temp(delete=False) as f_other:
+        for oid, f in ((o_HEAD, f_HEAD), (o_other, f_other)):
+            if oid:
+                f.write(data.get_object(oid))
+                f.flush()
+
+        with subprocess.Popen(
+            ["diff", "-DHEAD", f_HEAD.name, f_other.name], stdout=subprocess.PIPE
+        ) as proc:
+            output, _ = proc.communicate()
+
+    os.remove(f_HEAD.name)
+    os.remove(f_other.name)
     return output

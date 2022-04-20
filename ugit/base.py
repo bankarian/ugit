@@ -6,56 +6,54 @@ import operator
 import string
 
 from collections import namedtuple, deque
-from typing import Iterable
-from . import data
+from typing import Iterable, Dict, AnyStr
+from . import data, diff
 
 S = os.sep
-Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
+Commit = namedtuple("Commit", ["tree", "parent", "message"])
 
 
 def init():
     data.init()
     # Note that 'main' branch physically exists at the first commit
-    data.update_ref('HEAD',
-                    data.RefValue(symbolic=True, value='refs/heads/main'))
+    data.update_ref("HEAD", data.RefValue(symbolic=True, value="refs/heads/main"))
 
 
-def write_tree(directory='.'):
+def write_tree(directory="."):
     """
-    Save a version of the directory in ugit object database, 
+    Save a version of the directory in ugit object database,
     without addtional context.
     """
     entries = []
     with os.scandir(directory) as it:
         for entry in it:
-            full = f'{directory}/{entry.name}'
+            full = f"{directory}/{entry.name}"
             if is_ignored(full):
                 continue
             if entry.is_file(follow_symlinks=False):
-                type_ = 'blob'
-                with open(full, 'rb') as f:
+                type_ = "blob"
+                with open(full, "rb") as f:
                     oid = data.hash_object(f.read())
             elif entry.is_dir(follow_symlinks=False):
-                type_ = 'tree'
+                type_ = "tree"
                 write_tree(full)
                 oid = write_tree(full)
             entries.append((entry.name, oid, type_))
-    tree = ''.join(f'{type_} {oid} {name}\n'
-                   for name, oid, type_ in sorted(entries))
+    tree = "".join(f"{type_} {oid} {name}\n" for name, oid, type_ in sorted(entries))
     # print(tree)
-    return data.hash_object(tree.encode(), 'tree')
+    return data.hash_object(tree.encode(), "tree")
 
 
 def _empty_current_directory():
-    for dirpath, dirnames, filenames in os.walk('.', topdown=False):
+    for dirpath, dirnames, filenames in os.walk(".", topdown=False):
         # down to top
         for filename in filenames:
-            path = os.path.relpath(f'{dirpath}/{filename}')
+            path = os.path.relpath(f"{dirpath}/{filename}")
             if is_ignored(path) or not os.path.isfile(path):
                 continue
             os.remove(path)
         for dirname in dirnames:
-            path = os.path.relpath(f'{dirpath}/{dirname}')
+            path = os.path.relpath(f"{dirpath}/{dirname}")
             if is_ignored(path):
                 continue
             try:
@@ -72,58 +70,56 @@ def _iter_tree_entries(oid: str):
     """
     if not oid:
         return
-    tree = data.get_object(oid, 'tree')
+    tree = data.get_object(oid, "tree")
     for entry in tree.decode().splitlines():
-        type_, oid, name = entry.split(' ', 2)
+        type_, oid, name = entry.split(" ", 2)
         yield type_, oid, name
 
 
-def get_tree(oid: str, base_path: str = ''):
+def get_tree(oid: str, base_path: str = "") -> Dict[str, AnyStr]:
     """
     Extract the whole tree recursively as a Dict.
     """
     result = {}
     for type_, oid, name in _iter_tree_entries(oid):
-        assert '/' not in name
-        assert name not in ('..', '.')
+        assert "/" not in name
+        assert name not in ("..", ".")
         path = base_path + name
-        if type_ == 'blob':
+        if type_ == "blob":
             result[path] = oid
-        elif type_ == 'tree':
-            result.update(get_tree(oid, f'{path}/'))
+        elif type_ == "tree":
+            result.update(get_tree(oid, f"{path}/"))
         else:
-            assert False, f'Unknown tree entry {type_}'
+            assert False, f"Unknown tree entry {type_}"
     return result
 
 
 def read_tree(tree_oid: str):
     """
-    Empty current workspace, and restore a previous workspace 
+    Empty current workspace, and restore a previous workspace
     from tree object.
     """
     _empty_current_directory()
-    for path, oid in get_tree(tree_oid, base_path='./').items():
+    for path, oid in get_tree(tree_oid, base_path="./").items():
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             f.write(data.get_object(oid))
 
 
 def commit(message: str):
     """
-    Copy current directory to object database with author and time, 
+    Copy current directory to object database with author and time,
     also save message as commit.
     """
-    commit = f'tree {write_tree()}\n'
-    HEAD = data.get_ref('HEAD').value
+    commit = f"tree {write_tree()}\n"
+    HEAD = data.get_ref("HEAD").value
     if HEAD:
-        commit += f'parent {HEAD}\n'
-    commit += '\n'
-    commit += f'{message}\n'
+        commit += f"parent {HEAD}\n"
+    commit += "\n"
+    commit += f"{message}\n"
 
-    oid = data.hash_object(commit.encode(), 'commit')
-    data.update_ref('HEAD',
-                    value=data.RefValue(symbolic=False, value=oid),
-                    deref=True)
+    oid = data.hash_object(commit.encode(), "commit")
+    data.update_ref("HEAD", value=data.RefValue(symbolic=False, value=oid), deref=True)
 
     return oid
 
@@ -133,19 +129,19 @@ def get_commit(oid: str) -> Commit:
     Get commit(tree, parent, message) from object database.
     """
     parent = None
-    commit = data.get_object(oid, 'commit').decode()
+    commit = data.get_object(oid, "commit").decode()
     lines = iter(commit.splitlines())
     for line in itertools.takewhile(operator.truth, lines):
         # iteration stops when meets '\n'
-        key, value = line.split(' ', 1)
-        if key == 'tree':
+        key, value = line.split(" ", 1)
+        if key == "tree":
             tree = value
-        elif key == 'parent':
+        elif key == "parent":
             parent = value
         else:
-            assert False, f'Unknown field {key}'
+            assert False, f"Unknown field {key}"
 
-    message = '\n'.join(lines)
+    message = "\n".join(lines)
     return Commit(tree=tree, parent=parent, message=message)
 
 
@@ -154,32 +150,31 @@ def checkout(name: str):
     commit = get_commit(oid)
     read_tree(commit.tree)
     if is_branch(name):
-        HEAD = data.RefValue(symbolic=True, value=f'refs/heads/{name}')
+        HEAD = data.RefValue(symbolic=True, value=f"refs/heads/{name}")
     else:
         HEAD = data.RefValue(symbolic=False, value=oid)
 
-    data.update_ref('HEAD', HEAD, deref=False)
+    data.update_ref("HEAD", HEAD, deref=False)
 
 
 def is_branch(name: str) -> bool:
-    return data.get_ref(f'refs/heads/{name}').value is not None
+    return data.get_ref(f"refs/heads/{name}").value is not None
 
 
 def create_tag(name: str, oid: str):
-    data.update_ref(f'refs/tags/{name}',
-                    data.RefValue(symbolic=False, value=oid))
+    data.update_ref(f"refs/tags/{name}", data.RefValue(symbolic=False, value=oid))
 
 
 def get_oid(name: str) -> str:
-    if name == '@':
-        name = 'HEAD'
+    if name == "@":
+        name = "HEAD"
 
     # Name is ref
     refs_to_try = [
-        f'{name}',
-        f'refs/{name}',
-        f'refs/tags/{name}',
-        f'refs/heads/{name}',
+        f"{name}",
+        f"refs/{name}",
+        f"refs/tags/{name}",
+        f"refs/heads/{name}",
     ]
     for ref in refs_to_try:
         if data.get_ref(ref, deref=False).value:
@@ -191,7 +186,7 @@ def get_oid(name: str) -> str:
     if len(name) == 40 and is_hex:
         return name
 
-    assert False, f'Unknown name {name}'
+    assert False, f"Unknown name {name}"
 
 
 def iter_commits_and_parents(oids) -> Iterable[str]:
@@ -210,46 +205,67 @@ def iter_commits_and_parents(oids) -> Iterable[str]:
 
 
 def create_branch(name: str, oid: str):
-    data.update_ref(f'refs/heads/{name}',
-                    data.RefValue(symbolic=False, value=oid))
+    data.update_ref(f"refs/heads/{name}", data.RefValue(symbolic=False, value=oid))
 
 
 def get_branch_name() -> str:
     """
-    Return the branch name that HEAD points. 
+    Return the branch name that HEAD points.
     Return None if HEAD is not symbolic.
     """
-    HEAD = data.get_ref('HEAD', deref=False)
+    HEAD = data.get_ref("HEAD", deref=False)
     if not HEAD.symbolic:
         # detached HEAD, dangerous!
         return None
     value = HEAD.value
-    assert value.startswith('refs/heads/')
-    return os.path.relpath(value, 'refs/heads')
+    assert value.startswith("refs/heads/")
+    return os.path.relpath(value, "refs/heads")
 
 
 def iter_branch_names() -> Iterable[str]:
-    for refname, _ in data.iter_refs(prefix=f'refs{S}heads/'):
-        yield os.path.relpath(refname, f'refs{S}heads/')
+    for refname, _ in data.iter_refs(prefix=f"refs{S}heads/"):
+        yield os.path.relpath(refname, f"refs{S}heads/")
 
 
 def reset(oid: str):
-    data.update_ref('HEAD', data.RefValue(symbolic=False, value=oid))
+    data.update_ref("HEAD", data.RefValue(symbolic=False, value=oid))
 
 
 def get_working_tree():
     result = {}
-    for root, _, filenames in os.walk('.'):
+    for root, _, filenames in os.walk("."):
         for filename in filenames:
-            path = os.path.relpath(f'{root}/{filename}')
+            path = os.path.relpath(f"{root}/{filename}")
             if is_ignored(path) or not os.path.isfile(path):
                 continue
-            with open(path, 'rb') as f:
+            with open(path, "rb") as f:
                 result[path] = data.hash_object(f.read())
     return result
 
 
+def merge(other: str):
+    HEAD = data.get_ref("HEAD").value
+    assert HEAD
+    c_HEAD = get_commit(HEAD)
+    c_other = get_commit(other)
+
+    read_tree_merged(c_HEAD.tree, c_other.tree)
+    print("Merged in working tree")
+
+
+def read_tree_merged(o_HEAD, o_other):
+    _empty_current_directory()
+    for path, blob in diff.merge_trees(get_tree(o_HEAD), get_tree(o_other)).items():
+        os.makedirs(f"./{os.path.dirname(path)}", exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(blob)
+
+
 def is_ignored(path) -> bool:
     # TODO use '.ugitignore' file
-    return '.ugit' in path.split(S) or '.git' in path.split(
-        S) or '.ugit' in path.split('/') or '.git' in path.split('/')
+    return (
+        ".ugit" in path.split(S)
+        or ".git" in path.split(S)
+        or ".ugit" in path.split("/")
+        or ".git" in path.split("/")
+    )
