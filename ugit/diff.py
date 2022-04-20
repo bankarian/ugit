@@ -42,6 +42,7 @@ def diff_trees(t_from: Dict[str, str], t_to: Dict[str, str]):
 
 
 def diff_blobs(o_from, o_to, path="blob"):
+    # TODO use `difflib` instead of Unix diff
     with Temp(delete=False) as f_from, Temp(delete=False) as f_to:
         for oid, f in ((o_from, f_from), (o_to, f_to)):
             if oid:

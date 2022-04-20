@@ -74,6 +74,10 @@ def parse_args():
     show_parser.set_defaults(func=show)
     show_parser.add_argument('oid', default='@', type=oid, nargs='?')
 
+    diff_parser = commands.add_parser('diff')
+    diff_parser.set_defaults(func=_diff)
+    diff_parser.add_argument('commit', default='@', type=oid, nargs='?')
+
     return parser.parse_args()
 
 
@@ -195,3 +199,11 @@ def status(args):
 
 def reset(args):
     base.reset(args.commit)
+
+
+def _diff(args):
+    tree = args.commit and base.get_commit(args.commit).tree
+    
+    result = diff.diff_trees(base.get_tree(tree), base.get_working_tree())
+    sys.stdout.flush()
+    sys.stdout.buffer.write(result)

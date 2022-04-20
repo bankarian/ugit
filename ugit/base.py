@@ -237,6 +237,18 @@ def reset(oid: str):
     data.update_ref('HEAD', data.RefValue(symbolic=False, value=oid))
 
 
+def get_working_tree():
+    result = {}
+    for root, _, filenames in os.walk('.'):
+        for filename in filenames:
+            path = os.path.relpath(f'{root}/{filename}')
+            if is_ignored(path) or not os.path.isfile(path):
+                continue
+            with open(path, 'rb') as f:
+                result[path] = data.hash_object(f.read())
+    return result
+
+
 def is_ignored(path) -> bool:
     # TODO use '.ugitignore' file
     return '.ugit' in path.split(S) or '.git' in path.split(
