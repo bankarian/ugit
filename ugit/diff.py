@@ -6,14 +6,14 @@ import os
 
 from collections import defaultdict
 from tempfile import NamedTemporaryFile as Temp
-from typing import Iterable, Dict
+from typing import Iterable, Dict, Tuple
 
 from . import data
 
 
 def compare_trees(*trees):
     """
-    Take a list of trees, and return them grouped by filename.
+    Take a list of trees, and return them as OIDs grouped by filename.
     """
     entries = defaultdict(lambda: [None] * len(trees))
     for i, tree in enumerate(trees):
@@ -24,12 +24,19 @@ def compare_trees(*trees):
         yield (path, *oids)
 
 
+def iter_changed_files(t_from, t_to) -> Iterable[Tuple[str, str]]:
+    for path, o_from, o_to in compare_trees(t_from, t_to):
+        if o_from != o_to:
+            action = "new file" if not o_from else "deleted" if not o_to else "modified"
+            yield path, action
+
+
 def diff_trees(t_from: Dict[str, str], t_to: Dict[str, str]):
     """
     Take two trees, compares them and return all entries that
     have differenct OIDs.
     """
-    output = b''
+    output = b""
     for (
         path,
         o_from,

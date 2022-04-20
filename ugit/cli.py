@@ -15,80 +15,79 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    commands = parser.add_subparsers(dest='command')
+    commands = parser.add_subparsers(dest="command")
     commands.required = True
 
     oid = base.get_oid
 
-    init_parser = commands.add_parser('init')
+    init_parser = commands.add_parser("init")
     init_parser.set_defaults(func=init)
 
-    hash_object_parser = commands.add_parser('hash-object')
+    hash_object_parser = commands.add_parser("hash-object")
     hash_object_parser.set_defaults(func=hash_object)
     hash_object_parser.add_argument("file")
 
-    cat_file_parser = commands.add_parser('cat-file')
+    cat_file_parser = commands.add_parser("cat-file")
     cat_file_parser.set_defaults(func=cat_file)
-    cat_file_parser.add_argument('object', type=oid)
+    cat_file_parser.add_argument("object", type=oid)
 
-    write_tree_parser = commands.add_parser('write-tree')
+    write_tree_parser = commands.add_parser("write-tree")
     write_tree_parser.set_defaults(func=write_tree)
 
-    read_tree_parser = commands.add_parser('read-tree')
+    read_tree_parser = commands.add_parser("read-tree")
     read_tree_parser.set_defaults(func=read_tree)
-    read_tree_parser.add_argument('tree', type=oid)
+    read_tree_parser.add_argument("tree", type=oid)
 
-    commit_parser = commands.add_parser('commit')
+    commit_parser = commands.add_parser("commit")
     commit_parser.set_defaults(func=commit)
-    commit_parser.add_argument('-m', '--message', required=True)
+    commit_parser.add_argument("-m", "--message", required=True)
 
-    log_parser = commands.add_parser('log')
+    log_parser = commands.add_parser("log")
     log_parser.set_defaults(func=log)
-    log_parser.add_argument('oid', nargs='?', type=oid, default='@')
+    log_parser.add_argument("oid", nargs="?", type=oid, default="@")
 
-    checkout_parser = commands.add_parser('checkout')
+    checkout_parser = commands.add_parser("checkout")
     checkout_parser.set_defaults(func=checkout)
-    checkout_parser.add_argument('commit')
+    checkout_parser.add_argument("commit")
 
-    tag_parser = commands.add_parser('tag')
+    tag_parser = commands.add_parser("tag")
     tag_parser.set_defaults(func=tag)
-    tag_parser.add_argument('name')
-    tag_parser.add_argument('oid', nargs='?', type=oid, default='@')
+    tag_parser.add_argument("name")
+    tag_parser.add_argument("oid", nargs="?", type=oid, default="@")
 
-    k_parser = commands.add_parser('k')
+    k_parser = commands.add_parser("k")
     k_parser.set_defaults(func=k)
 
-    branch_parser = commands.add_parser('branch')
+    branch_parser = commands.add_parser("branch")
     branch_parser.set_defaults(func=branch)
-    branch_parser.add_argument('name', nargs='?')
-    branch_parser.add_argument('start_point', default='@', type=oid, nargs='?')
+    branch_parser.add_argument("name", nargs="?")
+    branch_parser.add_argument("start_point", default="@", type=oid, nargs="?")
 
-    status_parser = commands.add_parser('status')
+    status_parser = commands.add_parser("status")
     status_parser.set_defaults(func=status)
 
-    reset_parser = commands.add_parser('reset')
+    reset_parser = commands.add_parser("reset")
     reset_parser.set_defaults(func=reset)
-    reset_parser.add_argument('commit', type=oid)
+    reset_parser.add_argument("commit", type=oid)
 
-    show_parser = commands.add_parser('show')
+    show_parser = commands.add_parser("show")
     show_parser.set_defaults(func=show)
-    show_parser.add_argument('oid', default='@', type=oid, nargs='?')
+    show_parser.add_argument("oid", default="@", type=oid, nargs="?")
 
-    diff_parser = commands.add_parser('diff')
+    diff_parser = commands.add_parser("diff")
     diff_parser.set_defaults(func=_diff)
-    diff_parser.add_argument('commit', default='@', type=oid, nargs='?')
+    diff_parser.add_argument("commit", default="@", type=oid, nargs="?")
 
     return parser.parse_args()
 
 
 def init(args):
     base.init()
-    print(
-        f"Initialized ugit repository in {os.getcwd()}{os.sep}{data.GIT_DIR}")
+    print(f"Initialized ugit repository in {os.getcwd()}{os.sep}{data.GIT_DIR}")
 
 
 def hash_object(args):
-    with open(args.file, 'rb') as f:
+    with open(args.file, "rb") as f:
         print(data.hash_object(f.read()))
 
 
@@ -110,10 +109,10 @@ def commit(args):
 
 
 def _print_commit(oid: str, commit: base.Commit, refs: Iterable[str] = None):
-    refs_str = f'({", ".join(refs)})' if refs else ''
-    print(f'commit {oid}{refs_str}\n')
-    print(textwrap.indent(commit.message, '     '))
-    print('')
+    refs_str = f'({", ".join(refs)})' if refs else ""
+    print(f"commit {oid}{refs_str}\n")
+    print(textwrap.indent(commit.message, "     "))
+    print("")
 
 
 def log(args):
@@ -136,8 +135,7 @@ def show(args):
         parent_tree = base.get_commit(commit.parent).tree
 
     _print_commit(args.oid, commit)
-    result = diff.diff_trees(base.get_tree(parent_tree),
-                             base.get_tree(commit.tree))
+    result = diff.diff_trees(base.get_tree(parent_tree), base.get_tree(commit.tree))
     sys.stdout.flush()
     sys.stdout.buffer.write(result)
 
@@ -151,7 +149,7 @@ def tag(args):
 
 
 def k(args):
-    dot = 'digraph commits {\n'
+    dot = "digraph commits {\n"
 
     oids = set()
     for refname, ref in data.iter_refs(deref=False):
@@ -168,11 +166,10 @@ def k(args):
         if commit.parent:
             dot += f'"{oid}" -> "{commit.parent}"\n'
 
-    dot += '}'
+    dot += "}"
     print(dot)
     # TODO incompatible on Windows
-    with subprocess.Popen(['dot', '-Ttk', '/dev/stdin'],
-                          stdin=subprocess.PIPE) as proc:
+    with subprocess.Popen(["dot", "-Ttk", "/dev/stdin"], stdin=subprocess.PIPE) as proc:
         proc.communicate(dot.encode())
 
 
@@ -181,20 +178,26 @@ def branch(args):
         # show all branches
         current = base.get_branch_name()
         for branch in base.iter_branch_names():
-            prefix = '*' if branch == current else ' '
-            print(f'{prefix} {branch}')
+            prefix = "*" if branch == current else " "
+            print(f"{prefix} {branch}")
     else:
         base.create_branch(args.name, args.start_point)
-        print(f'Branch {args.name} created at {args.start_point[:10]}')
+        print(f"Branch {args.name} created at {args.start_point[:10]}")
 
 
 def status(args):
-    HEAD = base.get_oid('@')
+    HEAD = base.get_oid("@")
     branch = base.get_branch_name()
     if branch:
-        print(f'On branch {branch}')
+        print(f"On branch {branch}")
     else:
-        print(f'HEAD detached at {HEAD[:10]}')
+        print(f"HEAD detached at {HEAD[:10]}")
+    print("\nChanges to be committed:\n")
+    HEAD_tree = HEAD and base.get_commit(HEAD).tree
+    for path, action in diff.iter_changed_files(
+        base.get_tree(HEAD_tree), base.get_working_tree()
+    ):
+        print(f"{action:>12}: {path}")
 
 
 def reset(args):
@@ -203,7 +206,7 @@ def reset(args):
 
 def _diff(args):
     tree = args.commit and base.get_commit(args.commit).tree
-    
+
     result = diff.diff_trees(base.get_tree(tree), base.get_working_tree())
     sys.stdout.flush()
     sys.stdout.buffer.write(result)
