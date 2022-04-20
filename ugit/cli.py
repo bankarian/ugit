@@ -196,6 +196,11 @@ def status(args):
         print(f"On branch {branch}")
     else:
         print(f"HEAD detached at {HEAD[:10]}")
+
+    MERGE_HEAD = data.get_ref("MERGE_HEAD").value
+    if MERGE_HEAD:
+        print(f"Merging with {MERGE_HEAD[:10]}")
+
     print("\nChanges to be committed:\n")
     HEAD_tree = HEAD and base.get_commit(HEAD).tree
     for path, action in diff.iter_changed_files(

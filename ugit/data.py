@@ -95,9 +95,9 @@ def get_object(oid: str, expected="blob") -> bytes:
 
 def iter_refs(prefix: str = "", deref: bool = True) -> Iterable[Tuple[str, RefValue]]:
     """
-    A generator that iterates all refs and yields (refname, refcontent)
+    A generator that iterates all refs and yields (refname, RefValue)
     """
-    refs = ["HEAD"]
+    refs = ["HEAD", "MERGE_HEAD"]
     for root, _, filenames in os.walk(f"{GIT_DIR}/refs/"):
         root = os.path.relpath(root, GIT_DIR)
         refs.extend(f"{root}/{name}" for name in filenames)
@@ -105,4 +105,11 @@ def iter_refs(prefix: str = "", deref: bool = True) -> Iterable[Tuple[str, RefVa
     for refname in refs:
         if not refname.startswith(prefix):
             continue
-        yield refname, get_ref(refname, deref)
+        ref = get_ref(refname, deref=deref)
+        if ref.value:
+            yield refname, ref
+
+
+def delete_ref(ref: str, deref: bool = True):
+    ref = _get_ref_internal(ref, deref)[0]
+    os.remove(f"{GIT_DIR}/{ref}")
