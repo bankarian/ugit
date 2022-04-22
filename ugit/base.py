@@ -254,18 +254,22 @@ def get_working_tree():
 def merge(other: str):
     HEAD = data.get_ref("HEAD").value
     assert HEAD
+    merge_base = get_merge_base(other, HEAD)
+    c_base = get_commit(merge_base)
     c_HEAD = get_commit(HEAD)
     c_other = get_commit(other)
 
     data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=other))
 
-    read_tree_merged(c_HEAD.tree, c_other.tree)
+    read_tree_merged(c_HEAD.tree, c_other.tree, c_base.tree)
     print("Merged in working tree\nPlease commit")
 
 
-def read_tree_merged(o_HEAD, o_other):
+def read_tree_merged(o_HEAD, o_other, o_base):
     _empty_current_directory()
-    for path, blob in diff.merge_trees(get_tree(o_HEAD), get_tree(o_other)).items():
+    for path, blob in diff.merge_trees(
+        get_tree(o_HEAD), get_tree(o_other), get_tree(o_base)
+    ).items():
         os.makedirs(f"./{os.path.dirname(path)}", exist_ok=True)
         with open(path, "wb") as f:
             f.write(blob)
@@ -273,7 +277,7 @@ def read_tree_merged(o_HEAD, o_other):
 
 def get_merge_base(oid1: str, oid2: str) -> str:
     """
-    Return the common ancester of two commits, None if no common ancestor.
+    Return the common ancester OID of two commits, None if no common ancestor.
     """
     parents1 = set(iter_commits_and_parents({oid1}))
     for oid in iter_commits_and_parents({oid2}):
@@ -283,9 +287,6 @@ def get_merge_base(oid1: str, oid2: str) -> str:
 
 def is_ignored(path) -> bool:
     # TODO use '.ugitignore' file
-    return (
-        ".ugit" in path.split(S)
-        or ".git" in path.split(S)
-        or ".ugit" in path.split("/")
-        or ".git" in path.split("/")
-    )
+    return ".ugit" in path.split(S) or ".git" in path.split(S) \
+        or ".ugit" in path.split("/") or ".git" in path.split("/")
+    
