@@ -115,10 +115,10 @@ def commit(message: str):
     HEAD = data.get_ref("HEAD").value
     if HEAD:
         commit += f"parent {HEAD}\n"
-    MERGE_HEAD = data.get_ref('MERGE_HEAD').value
+    MERGE_HEAD = data.get_ref("MERGE_HEAD").value
     if MERGE_HEAD:
-        commit += f'parent {MERGE_HEAD}\n'
-        data.delete_ref('MERGE_HEAD', deref=False)
+        commit += f"parent {MERGE_HEAD}\n"
+        data.delete_ref("MERGE_HEAD", deref=False)
     commit += "\n"
     commit += f"{message}\n"
 
@@ -194,6 +194,9 @@ def get_oid(name: str) -> str:
 
 
 def iter_commits_and_parents(oids) -> Iterable[str]:
+    """
+    Iterate through the commit history from now to past.
+    """
     oids = deque(oids)
     visited = set()
 
@@ -207,7 +210,6 @@ def iter_commits_and_parents(oids) -> Iterable[str]:
         commit = get_commit(oid)
         oids.extendleft(commit.parents[:1])
         oids.extend(commit.parents[1:])
-
 
 
 def create_branch(name: str, oid: str):
@@ -255,7 +257,7 @@ def merge(other: str):
     c_HEAD = get_commit(HEAD)
     c_other = get_commit(other)
 
-    data.update_ref('MERGE_HEAD', data.RefValue(symbolic=False, value=other))
+    data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=other))
 
     read_tree_merged(c_HEAD.tree, c_other.tree)
     print("Merged in working tree\nPlease commit")
@@ -267,6 +269,16 @@ def read_tree_merged(o_HEAD, o_other):
         os.makedirs(f"./{os.path.dirname(path)}", exist_ok=True)
         with open(path, "wb") as f:
             f.write(blob)
+
+
+def get_merge_base(oid1: str, oid2: str) -> str:
+    """
+    Return the common ancester of two commits, None if no common ancestor.
+    """
+    parents1 = set(iter_commits_and_parents({oid1}))
+    for oid in iter_commits_and_parents({oid2}):
+        if oid in parents1:
+            return oid
 
 
 def is_ignored(path) -> bool:
