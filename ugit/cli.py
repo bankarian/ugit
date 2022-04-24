@@ -166,8 +166,6 @@ def k(args):
         dot += f'"{refname}" -> "{ref.value}"\n'
         if not ref.symbolic:
             oids.add(ref.value)
-        else:
-            oids.add(base.get_oid(ref.value))
 
     for oid in base.iter_commits_and_parents(oids):
         commit = base.get_commit(oid)
